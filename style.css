@@ -1,0 +1,502 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+}
+p {
+    margin: 0;
+}
+h1 {
+    font-size: 24px;
+}
+h2 {
+    font-size: 20px;
+    text-align: center;
+}
+
+header {
+    background: #2c3e50;
+    color: white;
+    padding: 5px;
+    text-align: center;
+}
+sup{
+    font-size: 1rem;
+    color:#90afcd
+}
+.tabs {
+    display: flex;
+    background: #90afcd;
+}
+
+.tab {
+    margin: 8px 0px 0px 8px;
+    padding: 8px 5px;
+    color: white;
+    cursor: pointer;
+    background: #547595;
+}
+
+.tab:hover {
+    background: #2c3e50;
+}
+
+.content {
+    display: none;
+    padding: 20px;
+}
+
+.active {
+    display: block;
+}
+
+.functions-container {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+}
+
+.term-card {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    background: #f9f9f9;
+}
+
+.term-card-body {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.term-card h3 {
+    margin-top: 0;
+    color: #2c3e50;
+}
+
+select {
+    width: 153px;
+    padding: 5px;
+    font-size: 14px;
+}
+
+input {
+    font-size: 14px;
+    height: 20px;
+    padding: 5px;
+}
+
+.param-group {
+    margin: 10px 0;
+}
+
+.param-group label {
+    display: inline-block;
+    font-weight: bold;
+}
+
+.param-group input {
+    width: 140px;
+    padding: 5px;
+}
+
+.term-chart {
+    margin-left: 10px;
+}
+
+button {
+    background: #2c3e50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    margin: 10px 0;
+    font-size: 1rem;
+}
+
+button:hover {
+    background: #1a252f;
+}
+
+.chart-container {
+    margin: 20px 0;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.linguistic-variable {
+    padding: 25px 20px 20px 20px;
+    margin: 20px auto;
+    max-width: 1400px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.linguistic-variable:last-child {
+    border-bottom: none;
+}
+
+.variable-title {
+    text-align: center;
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #2d3748;
+    letter-spacing: 1px;
+    display: flex;
+    flex-direction: column;
+}
+
+.terms-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    align-items: stretch;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.term-item {
+    flex: 1;
+    min-width: 120px;
+    background: #8cbff2;
+    padding: 8px 4px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 1.2rem;
+    color: #2d3748;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    cursor: default;
+    border: 1px solid rgba(255,255,255,0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.term-item:hover {
+    background: #aed4fa;
+}
+
+.rank-badge {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #1a5276;
+    background: rgba(255,255,255,0.6);
+    display: block;
+    padding: 2px 5px;
+    border-radius: 4px;
+}
+
+.term-name {
+    font-size: 0.9rem;
+}
+
+.variable-selector {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    gap: 15px;
+}
+
+.var-btn {
+    background: #547595;
+    padding: 8px 20px;
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.var-btn.active-var {
+    background: #2c3e50;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.var-panel {
+    display: none;
+}
+
+.var-panel.active-var-panel {
+    display: block;
+}
+
+.expert-table {
+    overflow-x: auto;
+    margin-top: 20px;
+    max-height: 440px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+.expert-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    min-width: 300px;
+}
+
+.expert-table th {
+    background: #2c3e50;
+    color: white;
+    padding: 12px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.expert-table td {
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+}
+
+.expert-table tr:hover {
+    background: #f5f5f5;
+}
+
+.expert-table input, .expert-table select {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.expert-table input:focus, .expert-table select:focus {
+    outline: none;
+    border-color: #2c3e50;
+}
+
+.stats-container {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 8px;
+}
+
+.stat-card {
+    flex: 1;
+    min-width: 280px;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stat-card h4 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+    text-align: center;
+}
+
+.settings-group {
+    background: #f0f4f8;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.settings-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.setting-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.setting-item label {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.setting-item input, .setting-item select {
+    width: 180px;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin: 20px 0 10px 0;
+    color: #2c3e50;
+    border-left: 4px solid #2c3e50;
+    padding-left: 10px;
+}
+
+.correction-panel {
+    background: #e8f4f8;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+    display: none;
+}
+
+.correction-panel.visible {
+    display: block;
+}
+
+.distr-chart {
+    margin: 15px 0;
+    height: 300px;
+}
+
+.scatter-chart {
+    margin: 15px 0;
+    height: 450px;
+}
+
+.manual-settings-group {
+    background: #f0f4f8;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.manual-table-container table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.manual-table-container th:first-child,
+.manual-table-container td:first-child {
+    width: 20%;
+    min-width: 100px;
+}
+
+.manual-table-container th:nth-child(2),
+.manual-table-container td:nth-child(2) {
+    width: 40%;
+    min-width: 200px;
+}
+
+.manual-table-container th:nth-child(3),
+.manual-table-container td:nth-child(3) {
+    width: 40%;
+    min-width: 200px;
+}
+
+.numeric-table-container table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.numeric-table-container th:first-child,
+.numeric-table-container td:first-child {
+    width: 20%;
+    min-width: 100px;
+}
+
+.numeric-table-container th:nth-child(2),
+.numeric-table-container td:nth-child(2) {
+    width: 40%;
+    min-width: 200px;
+}
+
+.numeric-table-container th:nth-child(3),
+.numeric-table-container td:nth-child(3) {
+    width: 40%;
+    min-width: 200px;
+}
+
+.manual-table-container select {
+    width: 95%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: white;
+    cursor: pointer;
+}
+
+.manual-table-container select:hover {
+    border-color: #2c3e50;
+}
+
+.manual-table-container select:focus {
+    outline: none;
+    border-color: #2c3e50;
+    box-shadow: 0 0 5px rgba(44, 62, 80, 0.3);
+}
+
+.numeric-table-container input {
+    width: 90%;
+    padding: 8px;
+    text-align: center;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.numeric-table-container input:focus {
+    outline: none;
+    border-color: #2c3e50;
+    box-shadow: 0 0 5px rgba(44, 62, 80, 0.3);
+}
+
+.defuzzification-block {
+    background: #e8f4f8;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 20px 0;
+    display: grid;
+    gap: 8px;
+}
+
+.defuzzification-block h4 {
+    margin: 0 0 15px 0;
+    color: #2c3e50;
+    font-size: 16px;
+}
+
+.defuzzification-block .settings-row {
+    display: flex;
+    gap: 20px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.defuzzification-block .setting-item {
+    flex: 0 0 auto;
+}
+
+.defuzzification-block button {
+    background: #27ae60;
+    margin: 0;
+}
+
+.defuzzification-block button:hover {
+    background: #219a52;
+}
+
+.manual-table-container select {
+    font-size: 14px;
+    font-weight: normal;
+}
+
+.numeric-table-container input {
+    font-size: 14px;
+    font-weight: normal;
+}
+
+.manual-table-container td,
+.numeric-table-container td {
+    font-size: 14px;
+}
+
+.manual-table-container select option {
+    font-size: 14px;
+    padding: 5px;
+}

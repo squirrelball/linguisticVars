@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Нечеткая логика - Лингвистические переменные</title>
+    <!-- Plotly -->
+    <script src="https://cdn.plot.ly/plotly-3.1.0.min.js" charset="utf-8"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    <h1>Соотношение Лингвистических Переменных</h1>
+</header>
+
+<div class="tabs">
+    <div class="tab" data-tab="0">Лингвистические переменные</div>
+    <div class="tab" data-tab="1">Функции соответствия</div>
+    <div class="tab" data-tab="2">Генерация ответов экспертов</div>
+    <div class="tab" data-tab="3">Ручной ввод ответов экспертов</div>
+</div>
+
+<!-- Tab 0: Лингвистические переменные с рангами -->
+<div class="content active" id="tab0">
+    <div class="linguistic-variable" id="linguisticVarXDisplay">
+        <div class="variable-title">
+            <p id="varXTitle"></p>
+        </div>
+        <div class="terms-container" id="varXTermsDisplay"></div>
+    </div>
+    
+    <div class="linguistic-variable" id="linguisticVarYDisplay">
+        <div class="variable-title">
+            <p id="varYTitle"></p>
+        </div>
+        <div class="terms-container" id="varYTermsDisplay"></div>
+    </div>
+</div>
+
+<!-- Tab 1: Функции соответствия -->
+<div class="content" id="tab1">
+    <div class="variable-selector" id="varSelector"></div>
+    
+    <div id="var1-panel" class="var-panel active-var-panel">
+        <div id="functions-var1" class="functions-container"></div>
+        <div class="chart-container">
+            <div id="membershipChart-var1"></div>
+        </div>
+    </div>
+    
+    <div id="var2-panel" class="var-panel">
+        <div id="functions-var2" class="functions-container"></div>
+        <div class="chart-container">
+            <div id="membershipChart-var2"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Tab 2: Генерация ответов экспертов по Гауссу -->
+<div class="content" id="tab2">   
+    <div class="settings-group" id="generationSettings"></div>
+    
+    <div id="linguisticSection" style="display: none;">
+        <div id="statsContainer" class="stats-container"></div>
+        
+        <div class="section-title">Диаграммы распределения ответов</div>
+        <div class="stats-container" style="background: none; padding: 0;">
+            <div class="stat-card">
+                <h4 id="distrTitleVar1">X: Распределение по термам</h4>
+                <div id="distrChartVar1" class="distr-chart"></div>
+            </div>
+            <div class="stat-card">
+                <h4 id="distrTitleVar2">Y: Распределение по термам</h4>
+                <div id="distrChartVar2" class="distr-chart"></div>
+            </div>
+        </div>
+        
+        <div class="section-title">Таблица 1 - Ответы экспертов в нечетком виде</div>
+        <div id="tableContainerLinguistic" class="expert-table"></div>
+    </div>
+    
+    <div id="correctionPanel" class="correction-panel">
+        <h3>Настройка дефаззификации и коррекции</h3>
+        <div class="settings-row">
+            <div class="setting-item">
+                <label>Метод дефаззификации</label>
+                <select id="defuzzMethod">
+                    <option value="centroid">Центр тяжести</option>
+                    <option value="meanmax">Средний максимум</option>
+                </select>
+            </div>
+            <div class="setting-item">
+                <label>Степень коррекции</label>
+                <input type="number" id="correctionNoise" value="0.2" step="0.02" min="0" max="0.5">
+            </div>
+        </div>
+        <div class="settings-row">
+            <button id="applyCorrectionBtn" style="background: #27ae60;">Применить</button>
+        </div>
+        <div id="defuzzPreview" style="margin-top: 10px; font-size: 13px; color: #555;"></div>
+    </div>
+    
+    <div id="numericSection" style="display: none;">
+        <div class="section-title">Таблица 2 - Дефаззифицированные значения (с коррекцией)</div>
+        <div id="tableContainerNumeric" class="expert-table"></div>
+        
+        <div class="section-title">Диаграмма соотношения параметров "X" и "Y"</div>
+        <div class="chart-container">
+            <div id="scatterPlot" class="scatter-chart"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Tab 3: Ручной ввод ответов экспертов -->
+<div class="content" id="tab3">
+    <div class="settings-group">
+        <h3>Настройки ручного ввода</h3>
+        <div class="settings-row">
+            <div class="setting-item">
+                <label>Количество экспертов:</label>
+                <input type="number" id="manualExpertCount" value="5" min="1" max="50" step="1">
+            </div>
+        </div>
+        <div class="settings-row">
+            <div class="setting-item">
+                <button id="createManualTableBtn" style="background: #2c3e50;">Создать таблицу для ввода</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="manualInputSection" style="display: none;">
+        <div class="section-title">Таблица 1 - Ввод ответов экспертов</div>
+        <div id="manualTableContainer" class="expert-table"></div>
+        
+        <div class="defuzzification-block">
+            <h4>Дефаззификация лингвистических переменных</h4>
+            <div class="settings-row">
+                <div class="setting-item">
+                    <label>Метод дефаззификации:</label>
+                    <select id="manualDefuzzMethod">
+                        <option value="centroid">Центр тяжести</option>
+                        <option value="meanmax">Средний максимум</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <div class="setting-item">
+                    <button id="convertToNumericBtn" style="background: #27ae60;">Перевести в численные значения</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="manualNumericSection" style="display: none;">
+        <div class="section-title">Таблица 2 - Численные значения</div>
+        <div id="manualNumericTableContainer" class="expert-table"></div>
+        
+        <div class="settings-row" style="margin-top: 20px;">
+            <button id="buildChartBtn" style="background: #2c3e50;">Построить график</button>
+        </div>
+    </div>
+    
+    <div id="manualChartSection" style="display: none;">
+        <div class="section-title">Диаграмма соотношения параметров "X" и "Y"</div>
+        <div class="chart-container">
+            <div id="manualScatterPlot" class="scatter-chart"></div>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
