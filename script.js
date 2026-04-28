@@ -88,6 +88,14 @@ class LinguisticVariable {
             )
         );
     }
+    
+    updateName(newName) {
+        this.name = newName;
+    }
+    
+    getDisplayName() {
+        return this.name;
+    }
 
     getTermCount() { return this.terms.length; }
     getTermName(idx) { return this.terms[idx].name; }
@@ -136,45 +144,21 @@ class LinguisticVariable {
 }
 
 // Конфигурация
-const CONFIG = {
-    varX: {
-        fullName: 'Возможность интенсивного использования ПО',
-        shortName: 'X',
-        terms: ["Очень низкая", "Низкая", "Ниже средней", "Средняя", "Выше средней", "Высокая", "Очень высокая"],
-        meanRankDefault: 4,
-        sigmaRankDefault: 0.6,
-        minRank: 1,
-        maxRank: 7
-    },
-    varY: {
-        fullName: 'Удобство использования',
-        shortName: 'Y',
-        terms: ["Абсолютно Неудобно", "Неудобно", "Слегка неудобно", "Нейтрально", "Удобно", "Абсолютно Удобно"],
-        meanRankDefault: 4,
-        sigmaRankDefault: 0.6,
-        minRank: 1,
-        maxRank: 6
-    },
-    expertCountDefault: 10,
-    correctionNoiseDefault: 0.2,
-    colors: ['#e74c3c', '#e67e22', '#f39c12', '#f1c40f', '#2ecc71', '#27ae60', '#1abc9c', '#3498db', '#9b59b6']
-};
-
-// Глобальное состояние
+const DEFAULT_TERMS = ["Малая", "Ниже Среднего", "Средняя", "Выше среднего", "Высокая"];
 
 let lingVarX, lingVarY;
 let currentVarForFunctions = 'var1';
 let lastAnswers = null;
 let manualNumericData = null;
 
-// Доп. функции ==============
+const colors = ['#e74c3c', '#e67e22', '#f39c12', '#f1c40f', '#2ecc71', '#27ae60', '#1abc9c', '#3498db', '#9b59b6'];
 
-//Цветовая палитра для функций принадлежности
+// Цветовая палитра для функций принадлежности
 function getColor(index) {
-    return CONFIG.colors[index % CONFIG.colors.length];
+    return colors[index % colors.length];
 }
 
-//Нормальное распределение ответов при генерации (преобразование Бокса - Мюллера)
+// Нормальное распределение ответов при генерации (преобразование Бокса - Мюллера)
 function normalRandomRank(mean, sigma, minRank, maxRank) {
     let u = 0, v = 0;
     while (u === 0) u = Math.random();
@@ -187,14 +171,14 @@ function normalRandomRank(mean, sigma, minRank, maxRank) {
     return Math.min(maxRank, Math.max(minRank, rank));
 }
 
-//Имитация коррекции при генерации через шум
+// Имитация коррекции при генерации через шум
 function applyCorrection(value, noiseLevel) {
     if (noiseLevel <= 0) return Math.min(1, Math.max(0, value));
     const delta = (Math.random() * 2 - 1) * noiseLevel;
     return Math.min(1, Math.max(0, value + delta));
 }
 
-//Приближение точек к полиному degree-ой степени
+// Приближение точек к полиному degree-ой степени
 function polynomialRegression(xValues, yValues, degree) {
     const n = xValues.length;
     const X = Array(degree + 1).fill().map(() => Array(degree + 1).fill(0));
@@ -230,10 +214,181 @@ function polynomialRegression(xValues, yValues, degree) {
     return coefficients;
 }
 
-// Вкладка 0. Основаная
+// Временное сообщение
+function showTemporaryMessage(elementId, message, duration = 2000) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    element.innerHTML = message;
+    element.style.opacity = "1";
+    
+    if (element._timeout) clearTimeout(element._timeout);
+    
+    element._timeout = setTimeout(() => {
+        element.style.transition = "opacity 0.5s";
+        element.style.opacity = "0";
+        setTimeout(() => {
+            element.innerHTML = "";
+            element.style.opacity = "1";
+        }, 500);
+    }, duration);
+}
+
+// Построение графика соотношений
+function buildScatterPlot(plotId, crisp1Values, crisp2Values, titlePrefix = '') {
+    if (crisp1Values.length === 0) return;
+    
+    const coefficients = polynomialRegression(crisp1Values, crisp2Values, 3);
+    
+    const xSmooth = [], ySmooth = [];
+    for (let x = 0; x <= 1; x += 0.01) {
+        xSmooth.push(x);
+        let y = coefficients[0] + coefficients[1]*x + coefficients[2]*Math.pow(x,2) + coefficients[3]*Math.pow(x,3);
+        ySmooth.push(Math.min(1, Math.max(0, y)));
+    }
+    
+    const scatterTrace = {
+        x: crisp1Values, 
+        y: crisp2Values, 
+        mode: 'markers', 
+        type: 'scatter', 
+        name: 'Эксперты',
+        marker: { 
+            size: 12, 
+            color: '#e74c3c', 
+            opacity: 0.8, 
+            line: { color: '#c0392b', width: 1 } 
+        },
+        text: crisp1Values.map((_, idx) => `Эксперт ${idx+1}`), 
+        hoverinfo: 'text+x+y'
+    };
+
+    const regressionTrace = { 
+        x: xSmooth, 
+        y: ySmooth, 
+        mode: 'lines', 
+        type: 'scatter', 
+        name: 'Аппроксимация (полином 3-й степени)', 
+        line: { color: '#2c3e50', width: 1 }
+    };
+    
+    Plotly.newPlot(plotId, [scatterTrace, regressionTrace], 
+        {
+            title: { 
+                text: `${titlePrefix}Y = ${coefficients[3].toFixed(4)}·X³${coefficients[2]>=0?"+":""}${coefficients[2].toFixed(4)}·X²${coefficients[1]>=0?"+":""}${coefficients[1].toFixed(4)}·X${coefficients[0]>=0?"+":""}${coefficients[0].toFixed(4)}`, 
+                font: { size: 16 } 
+            },
+            width: 600,
+            height: 600,
+            autosize: false,
+            xaxis: { 
+                title: { text: `X: ${lingVarX.name}`, font: { size: 13, weight: 'bold' } }, 
+                range: [0,1], gridcolor: '#eee', tickformat: '.2f',
+                scaleanchor: 'y', scaleratio: 1
+            },
+            yaxis: { 
+                title: { text: `Y: ${lingVarY.name}`, font: { size: 13, weight: 'bold' } }, 
+                range: [0,1], gridcolor: '#eee', tickformat: '.2f',
+                scaleanchor: 'x', scaleratio: 1
+            },
+            hovermode: 'closest', 
+            margin: { l: 65, r: 55, t: 70, b: 65 }, 
+            showlegend: false, 
+            plot_bgcolor: '#fafafa', 
+            paper_bgcolor: 'white'
+        }, 
+        { responsive: true }
+    );
+}
+
+// Отображение статистики
+function displayStatistics(containerId, countsVar1, countsVar2, N, isManual = false) {
+    const statsContainer = document.getElementById(containerId);
+    statsContainer.innerHTML = `
+        <div class="stat-card">
+            <h4>X: ${lingVarX.name}</h4>
+            <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                <tr style="background:#e0e0e0;"><th>Ранг</th><th>Терм</th><th>Частота</th><th>%</th></tr>
+                ${lingVarX.terms.map((term, i) => `<tr><td style="text-align:center">#${i+1}</td><td style="text-align:left">${term.name}</td><td style="text-align:center">${countsVar1[i]}</td><td style="text-align:center">${((countsVar1[i]/N)*100).toFixed(1)}%</td></tr>`).join('')}
+            </table>
+        </div>
+        <div class="stat-card">
+            <h4>Y: ${lingVarY.name}</h4>
+            <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                <tr style="background:#e0e0e0;"><th>Ранг</th><th>Терм</th><th>Частота</th><th>%</th></tr>
+                ${lingVarY.terms.map((term, i) => `<tr><td style="text-align:center">#${i+1}</td><td style="text-align:left">${term.name}</td><td style="text-align:center">${countsVar2[i]}</td><td style="text-align:center">${((countsVar2[i]/N)*100).toFixed(1)}%</td></tr>`).join('')}
+            </table>
+        </div>
+    `;
+    
+    const layout = { 
+        title: `Распределение ответов (N=${N})`, 
+        xaxis: { title: 'Термы', tickangle: 0 }, 
+        yaxis: { title: 'Количество экспертов' }, 
+        height: 300, 
+        margin: { l: 40, r: 20, t: 30, b: 70 } 
+    };
+    
+    const trace1 = { 
+        x: lingVarX.terms.map(t => t.name), 
+        y: countsVar1, 
+        type: 'bar', 
+        marker: { color: 'rgba(52, 152, 219, 0.7)', line: { color: '#2980b9', width: 1 } },
+        text: countsVar1.map(String), 
+        textposition: 'bottom' 
+    };
+    
+    const trace2 = { 
+        x: lingVarY.terms.map(t => t.name), 
+        y: countsVar2, 
+        type: 'bar', 
+        marker: { color: 'rgba(46, 204, 113, 0.7)', line: { color: '#27ae60', width: 1 } },
+        text: countsVar2.map(String), 
+        textposition: 'bottom' 
+    };
+    
+    const chart1Id = isManual ? 'manualDistrChartVar1' : 'distrChartVar1';
+    const chart2Id = isManual ? 'manualDistrChartVar2' : 'distrChartVar2';
+    
+    Plotly.newPlot(chart1Id, [trace1], layout, { responsive: true });
+    Plotly.newPlot(chart2Id, [trace2], layout, { responsive: true });
+}
+
+// Определение имен
+function applyVariableNames() {
+    const newNameX = document.getElementById('varXNameInput').value.trim();
+    const newNameY = document.getElementById('varYNameInput').value.trim();
+    
+    if (newNameX) lingVarX.updateName(newNameX);
+    if (newNameY) lingVarY.updateName(newNameY);
+    
+    renderTab0();
+    renderVariableSelector();
+    renderGenerationSettings();
+    
+    if (lastAnswers) {
+        const N = parseInt(document.getElementById("expertCount").value);
+        const countsVar1 = new Array(lingVarX.getTermCount()).fill(0);
+        const countsVar2 = new Array(lingVarY.getTermCount()).fill(0);
+        lastAnswers.forEach(ans => {
+            countsVar1[lingVarX.terms.findIndex(t => t.name === ans.term1)]++;
+            countsVar2[lingVarY.terms.findIndex(t => t.name === ans.term2)]++;
+        });
+        displayLinguisticResults(lastAnswers, countsVar1, countsVar2, N);
+    }
+    
+    const manualSection = document.getElementById('manualInputSection');
+    if (manualSection && manualSection.style.display === 'block') {
+        renderManualInputTable();
+    }
+    
+    showTemporaryMessage('applyMessage', 'Новые названия применены', 1500);
+}
+
+// Вкладка 0. Основная
 function renderTab0() {
-    document.getElementById('varXTitle').textContent = `${CONFIG.varX.shortName} - ${CONFIG.varX.fullName}`;
-    document.getElementById('varYTitle').textContent = `${CONFIG.varY.shortName} - ${CONFIG.varY.fullName}`;
+    document.getElementById('varXNameInput').value = lingVarX.name;
+    document.getElementById('varYNameInput').value = lingVarY.name;
     
     const containerX = document.getElementById('varXTermsDisplay');
     const containerY = document.getElementById('varYTermsDisplay');
@@ -247,12 +402,12 @@ function renderTab0() {
     `).join('');
 }
 
-// Вкладка 1. С функциями соотвествия
+// Вкладка 1. С функциями соответствия
 function renderVariableSelector() {
     const container = document.getElementById('varSelector');
     container.innerHTML = `
-        <button class="var-btn active-var" data-var="var1">${CONFIG.varX.shortName}: ${CONFIG.varX.fullName}</button>
-        <button class="var-btn" data-var="var2">${CONFIG.varY.shortName}: ${CONFIG.varY.fullName}</button>
+        <button class="var-btn active-var" data-var="var1" title="${lingVarX.name}">X: ${lingVarX.name}</button>
+        <button class="var-btn" data-var="var2" title="${lingVarY.name}">Y: ${lingVarY.name}</button>
     `;
 
     document.querySelectorAll('.var-btn').forEach(btn => {
@@ -320,30 +475,17 @@ function updateTermChart(varId, idx) {
     }
 
     const trace = { 
-        x: xValues, 
-        y: yValues, 
-        mode: 'lines', 
-        line: { 
-            color: getColor(idx), 
-            width: 2 
-        }, 
+        x: xValues, y: yValues, mode: 'lines', 
+        line: { color: getColor(idx), width: 2 }, 
         name: lingVar.getTermName(idx) 
     };
 
     const layout = { 
         title: lingVar.getTermName(idx), 
-        xaxis: { 
-            title: 'x', 
-            range: [0,1] 
-        }, 
-        yaxis: { 
-            title: 'μ(x)', 
-            range: [0,1] 
-        }, 
+        xaxis: { title: 'x', range: [0,1] }, 
+        yaxis: { title: 'μ(x)', range: [0,1] }, 
         margin: { l: 40, r: 20, t: 40, b: 40 }, 
-        width: 350, 
-        height: 250, 
-        showlegend: false 
+        width: 350, height: 250, showlegend: false 
     };
 
     const chartDiv = document.getElementById(`term-chart-${varId}-${idx}`);
@@ -357,35 +499,19 @@ function updateAllCharts(varId) {
     for (let i = 0; i < lingVar.getTermCount(); i++) {
         const data = [];
         for (let x = 0; x <= 1; x += 0.005) data.push(lingVar.getMembership(x, i));
-
         traces.push({ 
             x: Array.from({length:201}, (_,i) => i*0.005), 
             y: data, mode: 'lines', 
-            line: { 
-                color: getColor(i), 
-                width: 2 
-            }, 
+            line: { color: getColor(i), width: 2 }, 
             name: lingVar.getTermName(i) 
         });
     }
 
     const layout = { 
-        title: `Функции принадлежности`, 
-        xaxis: { 
-            title: 'Шкала (0-1)', 
-            range: [0,1] 
-        }, 
-        yaxis: { 
-            title: 'μ(x)', 
-            range: [0,1.1] 
-        }, 
-        legend: { 
-            orientation: 'h', 
-            yanchor: 'bottom', 
-            y:1.02, 
-            xanchor:'center', 
-            x:0.5 
-        }, 
+        title: `Функции принадлежности - ${lingVar.getDisplayName()}`, 
+        xaxis: { title: 'Шкала (0-1)', range: [0,1] }, 
+        yaxis: { title: 'μ(x)', range: [0,1.1] }, 
+        legend: { orientation: 'h', yanchor: 'bottom', y:1.02, xanchor:'center', x:0.5 }, 
         margin: { l: 50, r: 30, t: 50, b: 50 } 
     };
 
@@ -400,17 +526,17 @@ function renderGenerationSettings() {
     container.innerHTML = `
         <h3>Настройки генерации</h3>
         <div class="settings-row" style="margin-top: 15px;">
-            <p>${CONFIG.varX.shortName} - ${CONFIG.varX.fullName}</p>
-            <div class="setting-item"><label>Средний ранг (1-${CONFIG.varX.maxRank}):</label><input type="number" id="meanRankVar1" value="${CONFIG.varX.meanRankDefault}" step="0.2" min="1" max="${CONFIG.varX.maxRank}"></div>
-            <div class="setting-item"><label>Станд. отклонение ранга</label><input type="number" id="sigmaRankVar1" value="${CONFIG.varX.sigmaRankDefault}" step="0.1" min="0.3" max="3"></div>
+            <p>X: ${lingVarX.name}</p>
+            <div class="setting-item"><label>Средний ранг (1-${lingVarX.getTermCount()}):</label><input type="number" id="meanRankVar1" value="${Math.floor(lingVarX.getTermCount()/2)+1}" step="0.2" min="1" max="${lingVarX.getTermCount()}"></div>
+            <div class="setting-item"><label>Станд. отклонение ранга</label><input type="number" id="sigmaRankVar1" value="0.6" step="0.1" min="0.3" max="3"></div>
         </div>
         <div class="settings-row" style="margin-top: 15px;">
-            <p>${CONFIG.varY.shortName} - ${CONFIG.varY.fullName}</p>
-            <div class="setting-item"><label>Средний ранг (1-${CONFIG.varY.maxRank}):</label><input type="number" id="meanRankVar2" value="${CONFIG.varY.meanRankDefault}" step="0.2" min="1" max="${CONFIG.varY.maxRank}"></div>
-            <div class="setting-item"><label>Станд. отклонение ранга</label><input type="number" id="sigmaRankVar2" value="${CONFIG.varY.sigmaRankDefault}" step="0.1" min="0.3" max="3"></div>
+            <p>Y: ${lingVarY.name}</p>
+            <div class="setting-item"><label>Средний ранг (1-${lingVarY.getTermCount()}):</label><input type="number" id="meanRankVar2" value="${Math.floor(lingVarY.getTermCount()/2)+1}" step="0.2" min="1" max="${lingVarY.getTermCount()}"></div>
+            <div class="setting-item"><label>Станд. отклонение ранга</label><input type="number" id="sigmaRankVar2" value="0.6" step="0.1" min="0.3" max="3"></div>
         </div>
         <div class="settings-row" style="margin-top: 15px;">
-            <div class="settings-row"><label>Количество экспертов (N):</label><input type="number" id="expertCount" value="${CONFIG.expertCountDefault}" min="1" max="200" step="1"></div>
+            <div class="settings-row"><label>Количество экспертов (N):</label><input type="number" id="expertCount" value="10" min="1" max="200" step="1"></div>
         </div>
         <div class="settings-row" style="margin-top: 15px;">
             <button id="generateExpertsBtn" style="margin: 0; background: #2c3e50;">Сгенерировать ответы</button>
@@ -422,10 +548,8 @@ function renderGenerationSettings() {
 
 function generateExpertsAnswers() {
     const N = parseInt(document.getElementById("expertCount").value);
-
     const meanRank1 = parseFloat(document.getElementById("meanRankVar1").value);
     const sigmaRank1 = parseFloat(document.getElementById("sigmaRankVar1").value);
-
     const meanRank2 = parseFloat(document.getElementById("meanRankVar2").value);
     const sigmaRank2 = parseFloat(document.getElementById("sigmaRankVar2").value);
     
@@ -436,15 +560,14 @@ function generateExpertsAnswers() {
     const countsVar2 = new Array(lingVarY.getTermCount()).fill(0);
     
     for (let i = 0; i < N; i++) {
-        const rank1 = normalRandomRank(meanRank1, sigmaRank1, CONFIG.varX.minRank, CONFIG.varX.maxRank);
-        const rank2 = normalRandomRank(meanRank2, sigmaRank2, CONFIG.varY.minRank, CONFIG.varY.maxRank);
+        const rank1 = normalRandomRank(meanRank1, sigmaRank1, 1, lingVarX.getTermCount());
+        const rank2 = normalRandomRank(meanRank2, sigmaRank2, 1, lingVarY.getTermCount());
 
         answers.push({ 
             expert: i + 1, 
             term1: lingVarX.getTermName(rank1-1), 
             term2: lingVarY.getTermName(rank2-1), 
-            rank1, 
-            rank2 
+            rank1, rank2 
         });
 
         countsVar1[rank1-1]++;
@@ -459,85 +582,12 @@ function generateExpertsAnswers() {
 }
 
 function displayLinguisticResults(answers, countsVar1, countsVar2, N) {
-    document.getElementById('distrTitleVar1').textContent = `${CONFIG.varX.shortName}: Распределение по термам`;
-    document.getElementById('distrTitleVar2').textContent = `${CONFIG.varY.shortName}: Распределение по термам`;
+    document.getElementById('distrTitleVar1').textContent = `X: Распределение по термам`;
+    document.getElementById('distrTitleVar2').textContent = `Y: Распределение по термам`;
     
-    const statsContainer = document.getElementById("statsContainer");
-    statsContainer.innerHTML = `
-        <div class="stat-card">
-            <h4>${CONFIG.varX.shortName}: ${CONFIG.varX.fullName}</h4>
-            <table style="width:100%; border-collapse:collapse; font-size:13px;">
-                <tr style="background:#e0e0e0;"><th>Ранг</th><th>Терм</th><th>Частота</th><th>%</th></tr>
-                ${lingVarX.terms.map((term, i) => `<tr><td style="text-align:center">#${i+1}</td><td style="text-align:left">${term.name}</td><td style="text-align:center">${countsVar1[i]}</td><td style="text-align:center">${((countsVar1[i]/N)*100).toFixed(1)}%</td></tr>`).join('')}
-            </table>
-        </div>
-        <div class="stat-card">
-            <h4>${CONFIG.varY.shortName}: ${CONFIG.varY.fullName}</h4>
-            <table style="width:100%; border-collapse:collapse; font-size:13px;">
-                <tr style="background:#e0e0e0;"><th>Ранг</th><th>Терм</th><th>Частота</th><th>%</th></tr>
-                ${lingVarY.terms.map((term, i) => `<tr><td style="text-align:center">#${i+1}</td><td style="text-align:left">${term.name}</td><td style="text-align:center">${countsVar2[i]}</td><td style="text-align:center">${((countsVar2[i]/N)*100).toFixed(1)}%</td></tr>`).join('')}
-            </table>
-        </div>
-    `;
-
-    const layout = { 
-        title: `Распределение ответов (N=${N})`, 
-        xaxis: { 
-            title: 'Термы', 
-            tickangle: 0 
-        }, 
-        yaxis: { 
-            title: 'Количество экспертов' 
-        }, 
-        height: 300, 
-        margin: { l: 40, r: 20, t: 30, b: 70 } 
-    }
+    displayStatistics('statsContainer', countsVar1, countsVar2, N, false);
     
-    const trace1 = { 
-        x: lingVarX.terms.map(t => t.name), 
-        y: countsVar1, 
-        type: 'bar', 
-        marker: { 
-            color: 'rgba(52, 152, 219, 0.7)', 
-            line: { 
-                color: '#2980b9', 
-                width: 1 
-            }
-        }, 
-        text: countsVar1.map(String), 
-        textposition: 'bottom' 
-    };
-
-    Plotly.newPlot(
-        'distrChartVar1', 
-        [trace1], 
-        layout, 
-        {  responsive: true }
-    );
-    
-    const trace2 = { 
-        x: lingVarY.terms.map(t => t.name), 
-        y: countsVar2, 
-        type: 'bar', 
-        marker: { 
-            color: 'rgba(46, 204, 113, 0.7)', 
-            line: { 
-                color: '#27ae60', 
-                width: 1 
-            } 
-        }, 
-        text: countsVar2.map(String), 
-        textposition: 'bottom' 
-    };
-
-    Plotly.newPlot(
-        'distrChartVar2', 
-        [trace2], 
-        layout, 
-        { responsive: true }
-    );
-    
-    let tableHtml = `<table><thead><tr><th>Эксперт</th><th>${CONFIG.varX.shortName} - ${CONFIG.varX.fullName}</th><th>${CONFIG.varY.shortName} - ${CONFIG.varY.fullName}</th></tr></thead><tbody>`;
+    let tableHtml = `<table><thead><tr><th>Эксперт</th><th>X: ${lingVarX.name}</th><th>Y: ${lingVarY.name}</th></tr></thead><tbody>`;
     answers.forEach(ans => { tableHtml += `<tr><td style="text-align:center">Эксперт ${ans.expert}</td><td style="text-align:center">${ans.term1}</td><td style="text-align:center">${ans.term2}</td></tr>`; });
     tableHtml += `</tbody></table>`;
 
@@ -566,14 +616,11 @@ function applyCorrectionAndShow() {
         crisp2: applyCorrection(termToValueVar2[ans.term2], noiseLevel)
     }));
     
-    displayNumericResults(numericAnswers, method, noiseLevel);
-    
-    const methodName = method === 'centroid' ? 'Центр тяжести' : 'Средний максимум';
-    document.getElementById("defuzzPreview").innerHTML = `Применён метод "${methodName}", коррекция ±${noiseLevel}`;
+    displayNumericResults(numericAnswers);
 }
 
-function displayNumericResults(numericAnswers, method, noiseLevel) {
-    let tableHtml = `<table><thead><tr><th>Эксперт</th><th>${CONFIG.varX.shortName} - ${CONFIG.varX.fullName}</th><th>${CONFIG.varY.shortName} - ${CONFIG.varY.fullName}</th></tr></thead><tbody>`;
+function displayNumericResults(numericAnswers) {
+    let tableHtml = `<table><thead><tr><th>Эксперт</th><th>X: ${lingVarX.name}</th><th>Y: ${lingVarY.name}</th></tr></thead><tbody>`;
     numericAnswers.forEach(ans => {
         tableHtml += `<tr><td style="text-align:center">Эксперт ${ans.expert}</td><td style="text-align:center">${ans.crisp1.toFixed(4)}</td><td style="text-align:center">${ans.crisp2.toFixed(4)}</td></tr>`;
     });
@@ -582,67 +629,8 @@ function displayNumericResults(numericAnswers, method, noiseLevel) {
     
     const crisp1Values = numericAnswers.map(a => a.crisp1);
     const crisp2Values = numericAnswers.map(a => a.crisp2);
-    const coefficients = polynomialRegression(crisp1Values, crisp2Values, 3);
     
-    const xSmooth = [], ySmooth = [];
-    for (let x = 0; x <= 1; x += 0.01) {
-        xSmooth.push(x);
-        let y = coefficients[0] + coefficients[1]*x + coefficients[2]*Math.pow(x,2) + coefficients[3]*Math.pow(x,3);
-        ySmooth.push(Math.min(1, Math.max(0, y)));
-    }
-    
-    const scatterTrace = {
-        x: crisp1Values, 
-        y: crisp2Values, 
-        mode: 'markers', 
-        type: 'scatter', 
-        name: 'Эксперты',
-        marker: { 
-            size: 12, 
-            color: '#e74c3c', 
-            opacity: 0.8, 
-            line: { 
-                color: '#c0392b', 
-                width: 1 
-            } 
-        },
-        text: numericAnswers.map(a => `Эксперт ${a.expert}`), hoverinfo: 'text+x+y'
-    };
-    const regressionTrace = { x: xSmooth, y: ySmooth, mode: 'lines', type: 'scatter', name: 'Аппроксимация (полином 3-й степени)', line: { color: '#2c3e50', width: 1 } };
-    
-    Plotly.newPlot('scatterPlot', [scatterTrace, regressionTrace], 
-        {
-            title: { 
-                text: `Аппроксимация: Y = ${coefficients[3].toFixed(4)}·X³${coefficients[2]>=0?"+":""}${coefficients[2].toFixed(4)}·X²${coefficients[1]>=0?"+":""}${coefficients[1].toFixed(4)}·X${coefficients[0]>=0?"+":""}${coefficients[0].toFixed(4)}`, 
-                font: { size: 16 } 
-            },
-            xaxis: { 
-                title: { 
-                    text: `${CONFIG.varX.shortName} - ${CONFIG.varX.fullName}`, 
-                    font: { size: 13, weight: 'bold' } 
-                }, 
-                range: [0,1], 
-                gridcolor: '#eee', 
-                tickformat: '.2f' 
-            },
-            yaxis: { 
-                title: { 
-                    text: `${CONFIG.varY.shortName} - ${CONFIG.varY.fullName}`, 
-                    font: { size: 13, weight: 'bold' } 
-                }, 
-                range: [0,1], 
-                gridcolor: '#eee', 
-                tickformat: '.2f' 
-            },
-            hovermode: 'closest', 
-            margin: { l: 65, r: 55, t: 70, b: 65 }, 
-            showlegend: false, 
-            plot_bgcolor: '#fafafa', 
-            paper_bgcolor: 'white'
-        }, 
-        { responsive: true }
-    );
-    
+    buildScatterPlot('scatterPlot', crisp1Values, crisp2Values, '');
     document.getElementById("numericSection").style.display = "block";
 }
 
@@ -654,12 +642,12 @@ function renderManualInputTable() {
         return;
     }
     
-    let tableHtml = `<div class="manual-table-container"><table style="table-layout: fixed; width: 100%;">
+    let tableHtml = `<table style="table-layout: fixed; width: 100%;">
         <thead>
             <tr>
                 <th style="width: 20%; min-width: 100px;">Эксперт</th>
-                <th style="width: 40%; min-width: 200px;">${CONFIG.varX.shortName} - ${CONFIG.varX.fullName}</th>
-                <th style="width: 40%; min-width: 200px;">${CONFIG.varY.shortName} - ${CONFIG.varY.fullName}</th>
+                <th style="width: 40%; min-width: 200px;">X: ${lingVarX.name}</th>
+                <th style="width: 40%; min-width: 200px;">Y: ${lingVarY.name}</th>
             </tr>
         </thead>
         <tbody>`;
@@ -668,24 +656,55 @@ function renderManualInputTable() {
         tableHtml += `<tr>
             <td style="text-align: center; vertical-align: middle;">Эксперт ${i}</td>
             <td style="text-align: center;">
-                <select id="manual_term1_${i}" class="manual-term1" style="width: 95%; padding: 8px;">
+                <select id="manual_term1_${i}" class="manual-term1">
                     ${lingVarX.terms.map((term, idx) => `<option value="${term.name}">${term.name}</option>`).join('')}
                 </select>
             </td>
             <td style="text-align: center;">
-                <select id="manual_term2_${i}" class="manual-term2" style="width: 95%; padding: 8px;">
+                <select id="manual_term2_${i}" class="manual-term2">
                     ${lingVarY.terms.map((term, idx) => `<option value="${term.name}">${term.name}</option>`).join('')}
                 </select>
             </td>
         </tr>`;
     }
-    tableHtml += `</tbody></table></div>`;
+    tableHtml += `</tbody></table>`;
     
     document.getElementById('manualTableContainer').innerHTML = tableHtml;
     document.getElementById('manualInputSection').style.display = 'block';
     document.getElementById('manualNumericSection').style.display = 'none';
     document.getElementById('manualChartSection').style.display = 'none';
+    document.getElementById('manualStatsSection').style.display = 'none';
     manualNumericData = null;
+}
+
+function showManualStatistics() {
+    const expertCount = parseInt(document.getElementById('manualExpertCount').value);
+    const countsVar1 = new Array(lingVarX.getTermCount()).fill(0);
+    const countsVar2 = new Array(lingVarY.getTermCount()).fill(0);
+    
+    for (let i = 1; i <= expertCount; i++) {
+        const term1Select = document.getElementById(`manual_term1_${i}`);
+        const term2Select = document.getElementById(`manual_term2_${i}`);
+        
+        if (term1Select && term2Select) {
+            const term1 = term1Select.value;
+            const term2 = term2Select.value;
+            
+            const idx1 = lingVarX.terms.findIndex(t => t.name === term1);
+            const idx2 = lingVarY.terms.findIndex(t => t.name === term2);
+            
+            if (idx1 !== -1) countsVar1[idx1]++;
+            if (idx2 !== -1) countsVar2[idx2]++;
+        }
+    }
+    
+    if (countsVar1.every(v => v === 0) && countsVar2.every(v => v === 0)) {
+        alert('Нет данных для формирования статистики');
+        return;
+    }
+    
+    displayStatistics('manualStatsContainer', countsVar1, countsVar2, expertCount, true);
+    document.getElementById('manualStatsSection').style.display = 'block';
 }
 
 function convertToNumeric() {
@@ -703,16 +722,13 @@ function convertToNumeric() {
         const term1Select = document.getElementById(`manual_term1_${i}`);
         const term2Select = document.getElementById(`manual_term2_${i}`);
         
-        if (!term1Select || !term2Select) continue;
-        
-        const term1 = term1Select.value;
-        const term2 = term2Select.value;
-        
-        answers.push({
-            expert: i,
-            crisp1: termToValueVar1[term1],
-            crisp2: termToValueVar2[term2]
-        });
+        if (term1Select && term2Select) {
+            answers.push({
+                expert: i,
+                crisp1: termToValueVar1[term1Select.value],
+                crisp2: termToValueVar2[term2Select.value]
+            });
+        }
     }
     
     manualNumericData = answers;
@@ -722,12 +738,12 @@ function convertToNumeric() {
 }
 
 function displayManualNumericTable(numericData) {
-    let tableHtml = `<div class="numeric-table-container"><table style="table-layout: fixed; width: 100%;">
+    let tableHtml = `<table style="table-layout: fixed; width: 100%;">
         <thead>
             <tr>
                 <th style="width: 20%; min-width: 100px;">Эксперт</th>
-                <th style="width: 40%; min-width: 200px;">${CONFIG.varX.shortName} - ${CONFIG.varX.fullName}</th>
-                <th style="width: 40%; min-width: 200px;">${CONFIG.varY.shortName} - ${CONFIG.varY.fullName}</th>
+                <th style="width: 40%; min-width: 200px;">X: ${lingVarX.name}</th>
+                <th style="width: 40%; min-width: 200px;">Y: ${lingVarY.name}</th>
             </tr>
         </thead>
         <tbody>`;
@@ -735,15 +751,11 @@ function displayManualNumericTable(numericData) {
     numericData.forEach(ans => {
         tableHtml += `<tr>
             <td style="text-align: center; vertical-align: middle;">Эксперт ${ans.expert}</td>
-            <td style="text-align: center;">
-                <input type="number" id="numeric_val1_${ans.expert}" value="${ans.crisp1.toFixed(4)}" step="0.01" min="0" max="1" style="width: 90%; padding: 8px; text-align: center;">
-            </td>
-            <td style="text-align: center;">
-                <input type="number" id="numeric_val2_${ans.expert}" value="${ans.crisp2.toFixed(4)}" step="0.01" min="0" max="1" style="width: 90%; padding: 8px; text-align: center;">
-            </td>
+            <td style="text-align: center;"><input type="number" id="numeric_val1_${ans.expert}" value="${ans.crisp1.toFixed(4)}" step="0.01" min="0" max="1"></td>
+            <td style="text-align: center;"><input type="number" id="numeric_val2_${ans.expert}" value="${ans.crisp2.toFixed(4)}" step="0.01" min="0" max="1"></td>
         </tr>`;
     });
-    tableHtml += `</tbody></table></div>`;
+    tableHtml += `</tbody></table>`;
     
     document.getElementById('manualNumericTableContainer').innerHTML = tableHtml;
 }
@@ -773,78 +785,7 @@ function buildManualChart() {
         return;
     }
     
-    const coefficients = polynomialRegression(crisp1Values, crisp2Values, 3);
-    
-    const xSmooth = [], ySmooth = [];
-    for (let x = 0; x <= 1; x += 0.01) {
-        xSmooth.push(x);
-        let y = coefficients[0] + coefficients[1]*x + coefficients[2]*Math.pow(x,2) + coefficients[3]*Math.pow(x,3);
-        ySmooth.push(Math.min(1, Math.max(0, y)));
-    }
-    
-    const scatterTrace = {
-        x: crisp1Values, 
-        y: crisp2Values, 
-        mode: 'markers', 
-        type: 'scatter', 
-        name: 'Эксперты',
-        marker: { 
-            size: 12, 
-            color: '#e74c3c', 
-            opacity: 0.8, 
-            line: { 
-                color: '#c0392b', 
-                width: 1 
-            } 
-        },
-        text: crisp1Values.map((_, idx) => `Эксперт ${idx+1}`), hoverinfo: 'text+x+y'
-    };
-
-    const regressionTrace = { 
-        x: xSmooth, 
-        y: ySmooth, 
-        mode: 'lines', 
-        type: 'scatter', 
-        name: 'Аппроксимация (полином 3-й степени)', 
-        line: { 
-            color: '#2c3e50', 
-            width: 1
-        } 
-    };
-    
-    Plotly.newPlot('manualScatterPlot', [scatterTrace, regressionTrace], 
-        {
-            title: { 
-                text: `Аппроксимация: Y = ${coefficients[3].toFixed(4)}·X³${coefficients[2]>=0?"+":""}${coefficients[2].toFixed(4)}·X²${coefficients[1]>=0?"+":""}${coefficients[1].toFixed(4)}·X${coefficients[0]>=0?"+":""}${coefficients[0].toFixed(4)}`, 
-                font: { size: 16 } 
-            },
-            xaxis: { 
-                title: { 
-                    text: `${CONFIG.varX.shortName} - ${CONFIG.varX.fullName}`, 
-                    font: { size: 13, weight: 'bold' } 
-                }, 
-                range: [0,1], 
-                gridcolor: '#eee', 
-                tickformat: '.2f'
-            },
-            yaxis: { 
-                title: { 
-                    text: `${CONFIG.varY.shortName} - ${CONFIG.varY.fullName}`,
-                    font: { size: 13, weight: 'bold' } 
-                }, 
-                range: [0,1], 
-                gridcolor: '#eee', 
-                tickformat: '.2f' 
-            },
-            hovermode: 'closest', 
-            margin: { l: 65, r: 55, t: 70, b: 65 }, 
-            showlegend: false, 
-            plot_bgcolor: '#fafafa', 
-            paper_bgcolor: 'white'
-        }, 
-        { responsive: true }
-    );
-    
+    buildScatterPlot('manualScatterPlot', crisp1Values, crisp2Values, '');
     document.getElementById('manualChartSection').style.display = 'block';
 }
 
@@ -872,8 +813,7 @@ function switchVariable(varId) {
     else updateAllCharts(varId);
 }
 
-//Инициализация
-
+// Инициализация
 window.changeFunctionType = function(varId, idx, newType) {
     const lingVar = varId === 'var1' ? lingVarX : lingVarY;
     lingVar.setMfType(idx, newType);
@@ -888,9 +828,11 @@ window.updateParam = function(varId, idx, paramName, value) {
     updateAllCharts(varId);
 };
 
+window.showManualStatistics = showManualStatistics;
+
 function init() {
-    lingVarX = new LinguisticVariable(CONFIG.varX.fullName, CONFIG.varX.terms);
-    lingVarY = new LinguisticVariable(CONFIG.varY.fullName, CONFIG.varY.terms);
+    lingVarX = new LinguisticVariable("Возможность интенсивного использования ПО", [...DEFAULT_TERMS]);
+    lingVarY = new LinguisticVariable("Удобство использования", [...DEFAULT_TERMS]);
     
     renderTab0();
     renderVariableSelector();
@@ -907,6 +849,8 @@ function init() {
     document.getElementById('createManualTableBtn').addEventListener('click', renderManualInputTable);
     document.getElementById('convertToNumericBtn').addEventListener('click', convertToNumeric);
     document.getElementById('buildChartBtn').addEventListener('click', buildManualChart);
+    document.getElementById('applyVarNamesBtn').addEventListener('click', applyVariableNames);
+    document.getElementById('showManualStatsBtn').addEventListener('click', showManualStatistics);
     
     switchMainTab(0);
 }

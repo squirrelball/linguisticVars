@@ -25,16 +25,29 @@
 <div class="content active" id="tab0">
     <div class="linguistic-variable" id="linguisticVarXDisplay">
         <div class="variable-title">
-            <p id="varXTitle"></p>
+            <div class="variable-name-edit">
+                <label for="varXNameInput">Название переменной X:</label>
+                <input type="text" id="varXNameInput" class="var-name-input" value="Возможность интенсивного использования ПО">
+            </div>
         </div>
         <div class="terms-container" id="varXTermsDisplay"></div>
     </div>
     
     <div class="linguistic-variable" id="linguisticVarYDisplay">
         <div class="variable-title">
-            <p id="varYTitle"></p>
+            <div class="variable-name-edit">
+                <label for="varYNameInput">Название переменной Y:</label>
+                <input type="text" id="varYNameInput" class="var-name-input" value="Удобство использования">
+            </div>
         </div>
         <div class="terms-container" id="varYTermsDisplay"></div>
+    </div>
+    
+    <div class="settings-row" style="justify-content: center; margin-top: 10px;">
+        <button id="applyVarNamesBtn" style="background: #27ae60;">Применить названия</button>
+    </div>
+    <div class="settings-row" style="justify-content: center;">
+        <p id="applyMessage" style="color: #0b6c33;"></p>
     </div>
 </div>
 
@@ -62,22 +75,23 @@
     <div class="settings-group" id="generationSettings"></div>
     
     <div id="linguisticSection" style="display: none;">
-        <div id="statsContainer" class="stats-container"></div>
-        
-        <div class="section-title">Диаграммы распределения ответов</div>
-        <div class="stats-container" style="background: none; padding: 0;">
-            <div class="stat-card">
-                <h4 id="distrTitleVar1">X: Распределение по термам</h4>
-                <div id="distrChartVar1" class="distr-chart"></div>
-            </div>
-            <div class="stat-card">
-                <h4 id="distrTitleVar2">Y: Распределение по термам</h4>
-                <div id="distrChartVar2" class="distr-chart"></div>
+        <div class="section-title">Таблица 1 - Ответы экспертов в нечетком виде</div>
+        <div id="tableContainerLinguistic" class="expert-table-container"></div>
+
+        <div class="section-title">Статистика распределения ответов</div>
+        <div class="stats">
+            <div id="statsContainer" class="stats-container"></div>
+            <div class="stats-container" style="background: none; padding: 0;">
+                <div class="stat-card">
+                    <h4 id="distrTitleVar1">X: Распределение по термам</h4>
+                    <div id="distrChartVar1" class="chart-distr"></div>
+                </div>
+                <div class="stat-card">
+                    <h4 id="distrTitleVar2">Y: Распределение по термам</h4>
+                    <div id="distrChartVar2" class="chart-distr"></div>
+                </div>
             </div>
         </div>
-        
-        <div class="section-title">Таблица 1 - Ответы экспертов в нечетком виде</div>
-        <div id="tableContainerLinguistic" class="expert-table"></div>
     </div>
     
     <div id="correctionPanel" class="correction-panel">
@@ -98,16 +112,15 @@
         <div class="settings-row">
             <button id="applyCorrectionBtn" style="background: #27ae60;">Применить</button>
         </div>
-        <div id="defuzzPreview" style="margin-top: 10px; font-size: 13px; color: #555;"></div>
     </div>
     
     <div id="numericSection" style="display: none;">
         <div class="section-title">Таблица 2 - Дефаззифицированные значения (с коррекцией)</div>
-        <div id="tableContainerNumeric" class="expert-table"></div>
+        <div id="tableContainerNumeric" class="expert-table-container"></div>
         
         <div class="section-title">Диаграмма соотношения параметров "X" и "Y"</div>
         <div class="chart-container">
-            <div id="scatterPlot" class="scatter-chart"></div>
+            <div id="scatterPlot" class="chart-scatter"></div>
         </div>
     </div>
 </div>
@@ -131,7 +144,29 @@
     
     <div id="manualInputSection" style="display: none;">
         <div class="section-title">Таблица 1 - Ввод ответов экспертов</div>
-        <div id="manualTableContainer" class="expert-table"></div>
+        <div id="manualTableContainer" class="expert-table-container"></div>
+        
+        <div class="settings-row" style="margin-bottom: 20px">
+            <button id="showManualStatsBtn" style="background: #3498db;">Сформировать статистику</button>
+        </div>
+        
+        <div id="manualStatsSection" style="display: none;">
+            <div class="section-title">Статистика распределения ответов</div>
+            <div class="stats">
+                <div id="manualStatsContainer" class="stats-container"></div>
+                
+                <div class="stats-container" style="background: none; padding: 0;">
+                    <div class="stat-card">
+                        <h4 id="manualDistrTitleVar1">X: Распределение по термам</h4>
+                        <div id="manualDistrChartVar1" class="chart-distr"></div>
+                    </div>
+                    <div class="stat-card">
+                        <h4 id="manualDistrTitleVar2">Y: Распределение по термам</h4>
+                        <div id="manualDistrChartVar2" class="chart-distr"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
         
         <div class="defuzzification-block">
             <h4>Дефаззификация лингвистических переменных</h4>
@@ -155,9 +190,9 @@
     
     <div id="manualNumericSection" style="display: none;">
         <div class="section-title">Таблица 2 - Численные значения</div>
-        <div id="manualNumericTableContainer" class="expert-table"></div>
+        <div id="manualNumericTableContainer" class="expert-table-container"></div>
         
-        <div class="settings-row" style="margin-top: 20px;">
+        <div class="settings-row" style="margin-top: 10px;">
             <button id="buildChartBtn" style="background: #2c3e50;">Построить график</button>
         </div>
     </div>
@@ -165,7 +200,7 @@
     <div id="manualChartSection" style="display: none;">
         <div class="section-title">Диаграмма соотношения параметров "X" и "Y"</div>
         <div class="chart-container">
-            <div id="manualScatterPlot" class="scatter-chart"></div>
+            <div id="manualScatterPlot" class="chart-scatter"></div>
         </div>
     </div>
 </div>
