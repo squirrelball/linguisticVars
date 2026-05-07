@@ -6,205 +6,190 @@
     <title>Нечеткая логика - Лингвистические переменные</title>
     <!-- Plotly -->
     <script src="https://cdn.plot.ly/plotly-3.1.0.min.js" charset="utf-8"></script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="./style.css">
 </head>
 <body>
 
 <header>
-    <h1>Соотношение Лингвистических Переменных</h1>
+    <h1>Нечеткая логика - Соотношение между разнородными переменными</h1>
 </header>
 
-<div class="tabs">
-    <div class="tab" data-tab="0">Лингвистические переменные</div>
-    <div class="tab" data-tab="1">Функции соответствия</div>
-    <div class="tab" data-tab="2">Генерация ответов экспертов</div>
-    <div class="tab" data-tab="3">Ручной ввод ответов экспертов</div>
-</div>
+<div class="app-container">
+    <!-- Панель навигации сверху -->
+    <div class="nav-buttons">
+        <button class="nav-btn" id="backToSettingsBtn" style="display: none;">← Настройка переменных</button>
+        <div class="nav-placeholder"></div>
+        <button class="nav-btn primary" id="goToExpertBtn" disabled>Экспертная оценка →</button>
+    </div>
 
-<!-- Tab 0: Лингвистические переменные с рангами -->
-<div class="content active" id="tab0">
-    <div class="linguistic-variable" id="linguisticVarXDisplay">
-        <div class="variable-title">
-            <div class="variable-name-edit">
-                <label for="varXNameInput">Название переменной X:</label>
-                <input type="text" id="varXNameInput" class="var-name-input" value="Возможность интенсивного использования ПО">
-            </div>
-        </div>
-        <div class="terms-container" id="varXTermsDisplay"></div>
-    </div>
-    
-    <div class="linguistic-variable" id="linguisticVarYDisplay">
-        <div class="variable-title">
-            <div class="variable-name-edit">
-                <label for="varYNameInput">Название переменной Y:</label>
-                <input type="text" id="varYNameInput" class="var-name-input" value="Удобство использования">
-            </div>
-        </div>
-        <div class="terms-container" id="varYTermsDisplay"></div>
-    </div>
-    
-    <div class="settings-row" style="justify-content: center; margin-top: 10px;">
-        <button id="applyVarNamesBtn" style="background: #27ae60;">Применить названия</button>
-    </div>
-    <div class="settings-row" style="justify-content: center;">
-        <p id="applyMessage" style="color: #0b6c33;"></p>
-    </div>
-</div>
-
-<!-- Tab 1: Функции соответствия -->
-<div class="content" id="tab1">
-    <div class="variable-selector" id="varSelector"></div>
-    
-    <div id="var1-panel" class="var-panel active-var-panel">
-        <div id="functions-var1" class="functions-container"></div>
-        <div class="chart-container">
-            <div id="membershipChart-var1"></div>
-        </div>
-    </div>
-    
-    <div id="var2-panel" class="var-panel">
-        <div id="functions-var2" class="functions-container"></div>
-        <div class="chart-container">
-            <div id="membershipChart-var2"></div>
-        </div>
-    </div>
-</div>
-
-<!-- Tab 2: Генерация ответов экспертов по Гауссу -->
-<div class="content" id="tab2">   
-    <div class="settings-group" id="generationSettings"></div>
-    
-    <div id="linguisticSection" style="display: none;">
-        <div class="section-title">Таблица 1 - Ответы экспертов в нечетком виде</div>
-        <div id="tableContainerLinguistic" class="expert-table-container"></div>
-
-        <div class="section-title">Статистика распределения ответов</div>
-        <div class="stats">
-            <div id="statsContainer" class="stats-container"></div>
-            <div class="stats-container" style="background: none; padding: 0;">
-                <div class="stat-card">
-                    <h4 id="distrTitleVar1">X: Распределение по термам</h4>
-                    <div id="distrChartVar1" class="chart-distr"></div>
-                </div>
-                <div class="stat-card">
-                    <h4 id="distrTitleVar2">Y: Распределение по термам</h4>
-                    <div id="distrChartVar2" class="chart-distr"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div id="correctionPanel" class="correction-panel">
-        <h3>Настройка дефаззификации и коррекции</h3>
-        <div class="settings-row">
-            <div class="setting-item">
-                <label>Метод дефаззификации</label>
-                <select id="defuzzMethod">
-                    <option value="centroid">Центр тяжести</option>
-                    <option value="meanmax">Средний максимум</option>
-                </select>
-            </div>
-            <div class="setting-item">
-                <label>Степень коррекции</label>
-                <input type="number" id="correctionNoise" value="0.2" step="0.02" min="0" max="0.5">
-            </div>
-        </div>
-        <div class="settings-row">
-            <button id="applyCorrectionBtn" style="background: #27ae60;">Применить</button>
-        </div>
-    </div>
-    
-    <div id="numericSection" style="display: none;">
-        <div class="section-title">Таблица 2 - Дефаззифицированные значения (с коррекцией)</div>
-        <div id="tableContainerNumeric" class="expert-table-container"></div>
+    <!-- СТРАНИЦА 1: НАСТРОЙКА ПЕРЕМЕННЫХ -->
+    <div id="settingsPage" class="page active">
+        <div class="variable-selector" id="varSelectorSettings"></div>
         
-        <div class="section-title">Диаграмма соотношения параметров "X" и "Y"</div>
-        <div class="chart-container">
-            <div id="scatterPlot" class="chart-scatter"></div>
+        <!-- Панель X -->
+        <div id="settings-var1-panel" class="var-panel active-var-panel">
+            <div class="variable-edit-panel">
+                <div class="variable-name-edit">
+                    <label>Название переменной X:</label>
+                    <input type="text" id="varXNameInput" class="var-name-input" value="Возможность интенсивного использования ПО">
+                </div>
+                <div class="var-type-toggle" id="varXTypeToggle">
+                    <button type="button" class="toggle-btn active" data-type="qualitative" data-var="x">Качественная</button>
+                    <button type="button" class="toggle-btn" data-type="quantitative" data-var="x">Количественная</button>
+                </div>
+                <div class="range-inputs">
+                    <label>Диапазон определения:</label>
+                    <input type="number" id="varXMin" value="0" step="0.1">
+                    <span>—</span>
+                    <input type="number" id="varXMax" value="1" step="0.1">
+                    <button id="showFunctionsXBtn" class="btn-info">Определить функции соответствия на заданном диапазоне</button>
+                </div>
+                <div id="xFunctionsStatus" style="margin-top: 10px; font-size: 12px;"></div>
+            </div>
+            
+            <div class="membership-functions-section hidden" id="membershipXSection">
+                <h3>Функции принадлежности (термы)</h3>
+                <div id="functions-var1-settings" class="functions-container"></div>
+                <div class="chart-container">
+                    <div id="membershipChart-var1-settings" style="height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Панель Y -->
+        <div id="settings-var2-panel" class="var-panel">
+            <div class="variable-edit-panel">
+                <div class="variable-name-edit">
+                    <label>Название переменной Y:</label>
+                    <input type="text" id="varYNameInput" class="var-name-input" value="Удобство использования">
+                </div>
+                <div class="var-type-toggle" id="varYTypeToggle">
+                    <button type="button" class="toggle-btn active" data-type="qualitative" data-var="y">Качественная</button>
+                    <button type="button" class="toggle-btn" data-type="quantitative" data-var="y">Количественная</button>
+                </div>
+                <div class="range-inputs">
+                    <label>Диапазон определения:</label>
+                    <input type="number" id="varYMin" value="0" step="0.1">
+                    <span>—</span>
+                    <input type="number" id="varYMax" value="1" step="0.1">
+                    <button id="showFunctionsYBtn" class="btn-info">Определить функции соответствия на заданном диапазоне</button>
+                </div>
+                <div id="yFunctionsStatus" style="margin-top: 10px; font-size: 12px;"></div>
+            </div>
+            
+            <div class="membership-functions-section hidden" id="membershipYSection">
+                <h3>Функции принадлежности (термы)</h3>
+                <div id="functions-var2-settings" class="functions-container"></div>
+                <div class="chart-container">
+                    <div id="membershipChart-var2-settings" style="height: 400px;"></div>
+                </div>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- Tab 3: Ручной ввод ответов экспертов -->
-<div class="content" id="tab3">
-    <div class="settings-group">
-        <h3>Настройки ручного ввода</h3>
-        <div class="settings-row">
+    <!-- СТРАНИЦА 2: ЭКСПЕРТНАЯ ОЦЕНКА -->
+    <div id="expertPage" class="page">
+        <!-- Настройка количества экспертов -->
+        <div class="experts-count-panel">
             <div class="setting-item">
                 <label>Количество экспертов:</label>
-                <input type="number" id="manualExpertCount" value="5" min="1" max="50" step="1">
+                <input type="number" id="expertsCountInput" value="10" min="1" max="50" step="1" style="width: 100px;">
             </div>
+            <button id="applyExpertsCountBtn" class="btn-success">Применить количество экспертов</button>
         </div>
-        <div class="settings-row">
-            <div class="setting-item">
-                <button id="createManualTableBtn" style="background: #2c3e50;">Создать таблицу для ввода</button>
-            </div>
-        </div>
-    </div>
-    
-    <div id="manualInputSection" style="display: none;">
+
+        <!-- Таблица 1: Ввод ответов экспертов -->
         <div class="section-title">Таблица 1 - Ввод ответов экспертов</div>
-        <div id="manualTableContainer" class="expert-table-container"></div>
         
-        <div class="settings-row" style="margin-bottom: 20px">
-            <button id="showManualStatsBtn" style="background: #3498db;">Сформировать статистику</button>
+        <!-- Настройки генерации над столбцами -->
+        <div class="column-header" id="generationHeader">
         </div>
         
-        <div id="manualStatsSection" style="display: none;">
+        <div id="expertTableContainer" class="expert-table-container"></div>
+        
+        <div class="inline-controls">
+            <button id="clearTableBtn">Очистить таблицу</button>
+            <button id="showStatsBtn" class="btn-info">Показать статистику</button>
+        </div>
+        
+        <!-- Статистика -->
+        <div id="statsSection" style="display: none;">
             <div class="section-title">Статистика распределения ответов</div>
             <div class="stats">
-                <div id="manualStatsContainer" class="stats-container"></div>
-                
-                <div class="stats-container" style="background: none; padding: 0;">
-                    <div class="stat-card">
-                        <h4 id="manualDistrTitleVar1">X: Распределение по термам</h4>
-                        <div id="manualDistrChartVar1" class="chart-distr"></div>
+                <div id="statsContainer" class="stats-container"></div>
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div class="stat-card" style="flex: 1;">
+                        <h4 id="distrTitleVar1">X: Распределение</h4>
+                        <div id="distrChartVar1" class="chart-distr"></div>
                     </div>
-                    <div class="stat-card">
-                        <h4 id="manualDistrTitleVar2">Y: Распределение по термам</h4>
-                        <div id="manualDistrChartVar2" class="chart-distr"></div>
+                    <div class="stat-card" style="flex: 1;">
+                        <h4 id="distrTitleVar2">Y: Распределение</h4>
+                        <div id="distrChartVar2" class="chart-distr"></div>
                     </div>
                 </div>
             </div>
         </div>
         
-        <div class="defuzzification-block">
-            <h4>Дефаззификация лингвистических переменных</h4>
-            <div class="settings-row">
-                <div class="setting-item">
-                    <label>Метод дефаззификации:</label>
-                    <select id="manualDefuzzMethod">
-                        <option value="centroid">Центр тяжести</option>
-                        <option value="meanmax">Средний максимум</option>
-                    </select>
+        <!-- Дефаззификация (только если есть качественная переменная) -->
+        <div id="defuzzPanel" style="display: none;">
+            <div class="section-title">Дефаззификация</div>
+            <div class="settings-panel">
+                <div class="settings-row">
+                    <div class="setting-item">
+                        <label>Метод дефаззификации:</label>
+                        <select id="defuzzMethod">
+                            <option value="centroid">Центр тяжести</option>
+                            <option value="meanmax">Средний максимум</option>
+                        </select>
+                    </div>
                 </div>
-            </div>
-
-            <div class="settings-row">
-                <div class="setting-item">
-                    <button id="convertToNumericBtn" style="background: #27ae60;">Перевести в численные значения</button>
+                <div class="inline-controls">
+                    <button id="applyDefuzzBtn" class="btn-success">Применить дефаззификацию</button>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <div id="manualNumericSection" style="display: none;">
-        <div class="section-title">Таблица 2 - Численные значения</div>
-        <div id="manualNumericTableContainer" class="expert-table-container"></div>
         
-        <div class="settings-row" style="margin-top: 10px;">
-            <button id="buildChartBtn" style="background: #2c3e50;">Построить график</button>
+        <!-- Таблица 2: Численные значения -->
+        <div id="numericSection" style="display: none;">
+            <div class="section-title">Таблица 2 - Численные значения</div>
+            
+            <!-- Настройки коррекции над столбцами (только для качественных) -->
+            <div id="correctionHeader" class="column-header"></div>
+            
+            <div id="numericTableContainer" class="expert-table-container"></div>
         </div>
-    </div>
-    
-    <div id="manualChartSection" style="display: none;">
-        <div class="section-title">Диаграмма соотношения параметров "X" и "Y"</div>
-        <div class="chart-container">
-            <div id="manualScatterPlot" class="chart-scatter"></div>
+        
+        <!-- Кнопка построить график (всегда отдельно) -->
+        <div class="inline-controls">
+            <button id="buildChartBtn" class="btn-success">Построить график</button>
+        </div>
+        
+        <!-- График -->
+        <div id="chartSection" style="display: none;">
+            <div class="section-title">Диаграмма соотношения X и Y</div>
+            <div class="chart-container">
+                <div id="scatterPlot" class="chart-scatter"></div>
+            </div>
         </div>
     </div>
 </div>
 
-<script src="script.js"></script>
+<!-- Модальное окно подтверждения -->
+<div id="confirmModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Подтверждение действия</h3>
+        </div>
+        <div class="modal-body">
+            <p id="confirmMessage">Вы уверены?</p>
+        </div>
+        <div class="modal-footer">
+            <button id="confirmYesBtn" class="btn-success">Да</button>
+            <button id="confirmNoBtn" class="btn-danger">Нет</button>
+        </div>
+    </div>
+</div>
+
+<script src="./script.js"></script>
 </body>
 </html>
